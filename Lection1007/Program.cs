@@ -8,10 +8,36 @@ var optionsBuilder = new DbContextOptionsBuilder<StoreDbContext>();
 optionsBuilder.UseSqlServer("Data Source=mssql;Initial Catalog=ispp3102;Persist Security Info=True;User ID=ispp3102;Password=3102;Encrypt=True;Trust Server Certificate=True");
 using var context = new StoreDbContext(optionsBuilder.Options);
 
+var games = context.Games.AsQueryable();
+if (true) // заменить условие
+    games = games.Where(g => g.Price < 500);
+if (true) // заменить условие
+    games = games.Where(g => g.Name.Contains("a"));
+
+Console.WriteLine(games.ToQueryString());
+
+//int pageSize = 3;
+//int currentPage = 4;
+//var games = context.Games
+//    .Skip(pageSize * (currentPage - 1))
+//    .Take(pageSize);
+
+//foreach (var game in games)
+//    Console.WriteLine(game.Name);
+
+//Console.WriteLine(games.ToQueryString());
+//Console.WriteLine();
+
+
+
+//Include(context);
+
+
+
 //var categoryService = new CategoryServise(context);
 //var category = await categoryService3.GetCategoryAsync();
 //foreach (var category in categories)
-    Console.WriteLine();
+//Console.WriteLine();
 
 
 
@@ -93,6 +119,23 @@ static void GetList(AppDbContext context)
     var games = context.Games.Include(g => g.GameId > 2);
     foreach (var game1 in games)
         Console.WriteLine($"{game1.GameId} {game1.Name} {game1.Price} {game1.Category}");
+}
+
+static void Include(StoreDbContext context)
+{
+    var result = context.Games
+        .Include(g => g.Category);
+    Console.WriteLine(result.ToQueryString());
+    foreach (var x in result)
+        Console.WriteLine($"{x.Name} {x.Category?.Name}");
+    Console.WriteLine();
+
+    var categories = context.Categories
+        .Include(g => g.Games);
+    foreach (var x in categories)
+        Console.WriteLine($"{x.Name} {x.Games?.Count()}");
+    Console.WriteLine(result.ToQueryString());
+    Console.WriteLine();
 }
 
 //var game = context.Games.Find(1);
