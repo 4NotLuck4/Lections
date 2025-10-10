@@ -1,20 +1,47 @@
 ﻿using Lection1007.Contexts;
+using Lection1007.DTOs;
+using Lection1007.Filters;
 using Lection1007.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using System.Threading.Channels;
 Console.WriteLine("именение ORM");
 
 var optionsBuilder = new DbContextOptionsBuilder<StoreDbContext>();
 optionsBuilder.UseSqlServer("Data Source=mssql;Initial Catalog=ispp3102;Persist Security Info=True;User ID=ispp3102;Password=3102;Encrypt=True;Trust Server Certificate=True");
 using var context = new StoreDbContext(optionsBuilder.Options);
 
-var games = context.Games.AsQueryable();
-if (true) // заменить условие
-    games = games.Where(g => g.Price < 500);
-if (true) // заменить условие
-    games = games.Where(g => g.Name.Contains("a"));
+var titles = context.Games
+    .Select(g => g.Name);
+
+foreach (var t in titles)
+    Console.WriteLine(t);
+Console.WriteLine();
+
+var games = context.Games
+    .Include(g => g.Category)
+    .Select(g => g.ToDto());
+
+var testGames = context.Games.ToList();
+var dtos = 
+
+foreach (var g in games)
+    Console.WriteLine($"{g.Title} {g.Price} {g.Tax} {g.Category}");
 
 Console.WriteLine(games.ToQueryString());
+
+Sort(context);
+
+FilterBy(context);
+
+Filter(context);
+
+//if (true) // заменить условие
+//    games = games.Where(g => g.Price < 500);
+//if (true) // заменить условие
+//    games = games.Where(g => g.Name.Contains("a"));
+
+//Console.WriteLine(games.ToQueryString());
 
 //int pageSize = 3;
 //int currentPage = 4;
@@ -136,6 +163,53 @@ static void Include(StoreDbContext context)
         Console.WriteLine($"{x.Name} {x.Games?.Count()}");
     Console.WriteLine(result.ToQueryString());
     Console.WriteLine();
+}
+
+static void Filter(StoreDbContext context)
+{
+    var games = context.Games.AsQueryable();
+
+    Console.WriteLine("Фильтрация по цене?");
+    var answer = Console.ReadLine();
+
+    if (answer == "yes") // заменить условие
+        games = games.Where(g => g.Price < 500);
+    if (true) // заменить условие
+        games = games.Where(g => g.Name.Contains("a"));
+    if (true) // заменить условие
+        games = games.Where(g => !String.IsNullOrWhiteSpace(g.Description));
+    if (true) // заменить условие
+        games = games.Where(g => g.Category.Name == "arcada");
+    Console.WriteLine(games.ToQueryString());
+}
+
+static void FilterBy(StoreDbContext context)
+{
+    GameFilter filter = new()
+    {
+        Price = 500,
+        Category = "аркада"
+    };
+
+    var games = context.Games.AsQueryable();
+    if (filter.Price is not null) // заменить условие
+        games = games.Where(g => g.Price < filter.Price);
+    if (filter.Name is not null) // заменить условие
+        games = games.Where(g => g.Name == filter.Name);
+    if (filter.Category is not null) // заменить условие
+        games = games.Where(g => g.Category.Name == filter.Category);
+}
+
+static void Sort(StoreDbContext context)
+{
+    var games = context.Games
+        .OrderByDescending(g => g.Price);
+
+    games = context.Games
+        .OrderByDescending(g => EF.Property<object>(g, "Name"));
+
+    foreach (var g in games)
+        Console.WriteLine($"{g.Name} {g.Price}");
 }
 
 //var game = context.Games.Find(1);
