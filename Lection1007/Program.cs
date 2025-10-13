@@ -3,32 +3,34 @@ using Lection1007.DTOs;
 using Lection1007.Filters;
 using Lection1007.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
-using System.Threading.Channels;
 Console.WriteLine("именение ORM");
 
 var optionsBuilder = new DbContextOptionsBuilder<StoreDbContext>();
-optionsBuilder.UseSqlServer("Data Source=mssql;Initial Catalog=ispp3102;Persist Security Info=True;User ID=ispp3102;Password=3102;Encrypt=True;Trust Server Certificate=True");
+optionsBuilder.UseSqlServer("Data Source=mssql;Initial Catalog=ispp3102;User ID=ispp3102;Password=3102;Encrypt=True;Trust Server Certificate=True");
 using var context = new StoreDbContext(optionsBuilder.Options);
 
-var titles = context.Games
-    .Select(g => g.Name);
+var categories = context.Games
+    .GroupBy(g => g.Category.Name)
+    .Select(group => new
+    {
+        CategoryName = group.Key,
+        GamesCount = group.Count()
+    });
 
-foreach (var t in titles)
-    Console.WriteLine(t);
-Console.WriteLine();
+Console.WriteLine(categories.ToQueryString());
 
-var games = context.Games
-    .Include(g => g.Category)
-    .Select(g => g.ToDto());
+var categories2 = context.Games
+    .GroupBy(g => new { g.Category!.Name, g.IsDeleted})
+    .Select(group => new
+    {
+        CategoryName = group.Key.Name,
+        group.Key.IsDeleted,
+        GamesCount = group.Count()
+    });
 
-var testGames = context.Games.ToList();
-var dtos = 
+Console.WriteLine(categories2.ToQueryString());
 
-foreach (var g in games)
-    Console.WriteLine($"{g.Title} {g.Price} {g.Tax} {g.Category}");
-
-Console.WriteLine(games.ToQueryString());
+SelectDto(context);
 
 Sort(context);
 
@@ -210,6 +212,29 @@ static void Sort(StoreDbContext context)
 
     foreach (var g in games)
         Console.WriteLine($"{g.Name} {g.Price}");
+}
+
+static void SelectDto(StoreDbContext context)
+{
+    var titles = context.Games
+        .Select(g => g.Name);
+
+    foreach (var t in titles)
+        Console.WriteLine(t);
+    Console.WriteLine();
+
+    var games = context.Games
+        .Include(g => g.Category)
+        .Select(g => g.ToDto());
+
+    //var testGames = context.Games.ToList();
+    //var dtos = testGames.ToDtos();
+
+    foreach (var g in games)
+        Console.WriteLine($"{g.Title} {g.Price} {g.Tax} {g.Category}");
+    //return games;
+    Console.WriteLine(games.ToQueryString());
+
 }
 
 //var game = context.Games.Find(1);
