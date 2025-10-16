@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Lection1007.Models
+namespace Lections1007.Model
 {
     [Table("Category")]
     public class Category
@@ -8,6 +8,6 @@ namespace Lection1007.Models
         public int CategoryId { get; set; }
         public string Name { get; set; } = null!;
 
-        public IEnumerable<Game>? Games{ get; set; }
+        public IEnumerable<Game>? Games { get; set; }
     }
 }

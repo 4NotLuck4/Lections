@@ -1,13 +1,16 @@
-﻿using Lection1007.Contexts;
-using Lection1007.Filters;
-using Lection1007.Models;
+﻿using Lections1007.Contexts;
+using Lections1007.FIlteres;
+using Lections1007.Model;
 using Microsoft.EntityFrameworkCore;
 
-namespace Lection1007.Services
+namespace Lections1007.Services
 {
     public class GameService(StoreDbContext context)
     {
         private readonly StoreDbContext _context = context;
+
+        public async Task<List<Game>> GetGamesAsync()
+            => await _context.Games.ToListAsync();
 
         public async Task<List<Game>> GetGamesAsync(GameFilter? filter)
         {
@@ -15,12 +18,13 @@ namespace Lection1007.Services
                 return await _context.Games.ToListAsync();
 
             var games = context.Games.AsQueryable();
-            if (filter.Price is not null) // заменить условие
+
+            if (filter.Price is not null)
                 games = games.Where(g => g.Price < filter.Price);
-            if (filter.Name is not null) // заменить условие
-                games = games.Where(g => g.Name == filter.Name);
-            if (filter.Category is not null) // заменить условие
-                games = games.Where(g => g.Category.Name == filter.Category);
+            if (filter.Name is not null)
+                games = games.Where(g => g.Name.Contains(filter.Name));
+            if (true)
+                games = games.Where(g => g.Category.Name.Contains(filter.Category));
 
             return await games.ToListAsync();
         }

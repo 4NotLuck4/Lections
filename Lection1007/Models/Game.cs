@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Lection1007.Models
+namespace Lections1007.Model
 {
     [Table("Game")]
     public class Game
@@ -11,7 +11,7 @@ namespace Lection1007.Models
         public decimal Price { get; set; }
         public string? Description { get; set; }
         public bool IsDeleted { get; set; }
-        public short KeysAmount { get; set; }
+        public Int16 KeysAmount { get; set; }
 
         public Category? Category { get; set; }
     }

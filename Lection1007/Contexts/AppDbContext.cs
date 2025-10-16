@@ -1,7 +1,8 @@
-﻿using Lection1007.Models;
+﻿using Lections1007.Model;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
-namespace Lection1007.Contexts
+namespace Lections1007.Contexts
 {
     public class AppDbContext : DbContext
     {
@@ -10,18 +11,19 @@ namespace Lection1007.Contexts
 
         public AppDbContext()
         {
-            //Database.EnsureDeleted();   // удаление БД
-            //Database.EnsureCreated();   // создание БД
+            //Database.EnsureDeleted();
+            //Database.EnsureCreated();
         }
 
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
-        {
-        }
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            //optionsBuilder.UseSqlite("Data Source = text.db");
-            optionsBuilder.UseSqlServer("Data Source=mssql;Initial Catalog=ispp3102;Persist Security Info=True;User ID=ispp3102;Password=3102;Encrypt=True;Trust Server Certificate=True");
+            //optionsBuilder.UseSqlite("Data Source = testDb.sqlite");
+
+            optionsBuilder
+                .UseSqlServer(@"Data Source=mssql;Initial Catalog=ispp3102;User ID=ispp3102;Password=3102;Trust Server Certificate=True")
+                .LogTo(Console.WriteLine, LogLevel.Information);
         }
     }
 }

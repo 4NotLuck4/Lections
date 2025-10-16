@@ -1,153 +1,154 @@
-﻿using Lection1007.Contexts;
-using Lection1007.DTOs;
-using Lection1007.Filters;
-using Lection1007.Models;
+﻿using Lections1007.Contexts;
+using Lections1007.DTOs;
+using Lections1007.FIlteres;
+using Lections1007.Model;
 using Microsoft.EntityFrameworkCore;
-Console.WriteLine("именение ORM");
+using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 
-var optionsBuilder = new DbContextOptionsBuilder<StoreDbContext>();
-optionsBuilder.UseSqlServer("Data Source=mssql;Initial Catalog=ispp3102;User ID=ispp3102;Password=3102;Encrypt=True;Trust Server Certificate=True");
-using var context = new StoreDbContext(optionsBuilder.Options);
-
-var categories = context.Games
-    .GroupBy(g => g.Category.Name)
-    .Select(group => new
-    {
-        CategoryName = group.Key,
-        GamesCount = group.Count()
-    });
-
-Console.WriteLine(categories.ToQueryString());
-
-var categories2 = context.Games
-    .GroupBy(g => new { g.Category!.Name, g.IsDeleted})
-    .Select(group => new
-    {
-        CategoryName = group.Key.Name,
-        group.Key.IsDeleted,
-        GamesCount = group.Count()
-    });
-
-Console.WriteLine(categories2.ToQueryString());
-
-SelectDto(context);
-
-Sort(context);
-
-FilterBy(context);
-
-Filter(context);
-
-//if (true) // заменить условие
-//    games = games.Where(g => g.Price < 500);
-//if (true) // заменить условие
-//    games = games.Where(g => g.Name.Contains("a"));
-
-//Console.WriteLine(games.ToQueryString());
-
-//int pageSize = 3;
-//int currentPage = 4;
-//var games = context.Games
-//    .Skip(pageSize * (currentPage - 1))
-//    .Take(pageSize);
-
-//foreach (var game in games)
-//    Console.WriteLine(game.Name);
-
-//Console.WriteLine(games.ToQueryString());
-//Console.WriteLine();
-
-
-
-//Include(context);
-
-
-
-//var categoryService = new CategoryServise(context);
-//var category = await categoryService3.GetCategoryAsync();
-//foreach (var category in categories)
-//Console.WriteLine();
-
-
+Console.WriteLine("Применение ORM [EF Core]");
 
 //using var context = new AppDbContext();
-//GetList(context);
+var optionsBuilder = new DbContextOptionsBuilder<StoreDbContext>();
+optionsBuilder.UseSqlServer(@"Data Source=mssql;Initial Catalog=ispp3102;User ID=ispp3102;Password=3102;Trust Server Certificate=True");
+optionsBuilder.LogTo(Console.WriteLine, LogLevel.Information);
+optionsBuilder.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
 
-//await AddCategory(context);
-//await RemoveCategory(context);
+using var context = new StoreDbContext(optionsBuilder.Options);
 
-//await UpdateCategoryFromDb(context);
-//UpdateCategory(context);
+context.ChangeTracker.QueryTrackingBehavior =
+    QueryTrackingBehavior.NoTracking;
 
-//context.Games
-//    .Where(g => g.CategoryId > 4)
-//    .ExecuteUpdate(setters => setters
-//        .SetProperty(g => g.IsDeleted, g => false)
-//        .SetProperty(g => g.Price, g => g.Price > 2000 ? 3000 : 1000)
-//        .SetProperty(g => g.KeysAmount, g => g.KeysAmount > 2000 ? 3000 : 1000));
+var games = context.Games
+    .Join(context.Categories,
+        g => g.CategoryId,
+        c => c.CategoryId,
+        (g, c) => new
+        {
+            g.Name,
+            Category = c.Name,
+        });
+
+var badgames = context.Games
+    .Join(context.Categories,
+        g => g.GameId,
+        c => c.CategoryId,
+        (g, c) => new
+        {
+            g.GameId,
+            g.Name,
+            Category = c.Name,
+        });
+
+Console.WriteLine(badgames.ToQueryString());
+Debug.WriteLine(games.ToQueryString());
+Trace.WriteLine(games.ToQueryString());
+
+var isAllGamesDeleted = context.Games
+    .All(g => g.IsDeleted);
+
+var hasUndeletedGames = context.Games
+    .Any(g => !g.IsDeleted);
+
+//var categoryService = new CategoryService(context);
+//var categories = await categoryService.GetCategoriesAsync();
+
+//foreach (var category in categories)
+//    Console.WriteLine(category.Name);
+
+static async Task GetValueAsync(AppDbContext context)
+{
+    var btGame = context.Games.FirstOrDefault(x => x.GameId == 3);
+    var game = await context.Games.FindAsync(1);
+    game = context.Games.Find(1);
+
+    game = context.Games.FirstOrDefault(g => g.GameId > 2);
+    game = await context.Games.FirstOrDefaultAsync(g => g.GameId > 2);
+
+    game = context.Games.SingleOrDefault(g => g.GameId == 2); //Должен принимать лишь одно вхождение
+    game = await context.Games.SingleOrDefaultAsync(g => g.GameId == 2);
+}
+
+static void GetList(AppDbContext context)
+{
+    var categories = context.Categories.Include(c => c.Games);
+    foreach (var category in categories)
+        Console.WriteLine($"[{category.CategoryId}] - {category.Name}, {category.Games?.Count()}");
+
+    Console.WriteLine();
+
+    var games = context.Games.Include(g => g.Category);
+    foreach (var game1 in games)
+        Console.WriteLine($"[{game1.GameId}] - {game1.Name}, {game1.Category?.Name}");
+}
 
 static async Task AddCategory(AppDbContext context)
 {
-    //insert
+    //Insert - добавление значений в таблицу
     var category = new Category()
     {
-        Name = "casual"
+        Name = "rogue-like"
     };
-    context.Categories.Add(category);
-    context.SaveChanges();
+
+    //context.Categories.Add(category);
+    //context.SaveChanges();
 
     await context.Categories.AddAsync(category);
     await context.SaveChangesAsync();
 }
 
-static async Task RemoveCategory(AppDbContext context)
+static async Task RemoveCategoryAsync(AppDbContext context)
 {
-    //delete
-    var category = context.Categories.Find(6);
+    //delete - Удаление объекта
+    var category = await context.Categories.FindAsync(8);
     if (category is not null)
     {
         context.Categories.Remove(category);
 
-        context.SaveChanges();
         await context.SaveChangesAsync();
     }
+    //AddRange(), RemoveRange()
 }
 
-static async Task UpdateCategoryFromDb(AppDbContext context)
+static async Task UpdateCategoryFromDbAsync(AppDbContext context)
 {
-    // update
-    // 1
-    var category = context.Categories.Find(1);
+    //update - Обновление данных
+    //1 - получаем объект и меняем его
+    var category = await context.Categories.FindAsync(1);
+
     if (category is null)
-        throw new ArgumentException("егория не найдена");
-    category.Name = "arcada";
-    context.SaveChanges();
+        throw new ArgumentException("category isn't found");
+
+    category.Name = "simulator";
+
     await context.SaveChangesAsync();
 }
 
-static void UpdateCategory(AppDbContext context)
+static async Task UpdateCategoryFromCodeAsync(AppDbContext context)
 {
-    // update2
+    //update - Обновление данных
+    //2 - создаём объект в программе и отправляем изм. данные
     var category = new Category()
     {
-        CategoryId = 1,
-        Name = "аркада"
+        CategoryId = 2,
+        Name = "Shooter",
     };
+
     context.Categories.Update(category);
-    context.SaveChanges();
+    await context.SaveChangesAsync();
 }
 
-static void GetList(AppDbContext context)
+static async Task MassiveUpdateAsync(AppDbContext context)
 {
-    var categories = context.Categories;
-    foreach (var category in categories)
-        Console.WriteLine($"{category.CategoryId} {category.Name} {category.Games?.Count()}");
+    await context.Games
+        .Where(g => g.GameId > 4)
+        .ExecuteDeleteAsync();
 
-    Console.WriteLine();
-
-    var games = context.Games.Include(g => g.GameId > 2);
-    foreach (var game1 in games)
-        Console.WriteLine($"{game1.GameId} {game1.Name} {game1.Price} {game1.Category}");
+    await context.Games
+        .Where(g => g.CategoryId == 1)
+        .ExecuteUpdateAsync(setters => setters
+            .SetProperty(g => g.IsDeleted, g => false)
+            .SetProperty(g => g.KeysAmount, g => g.KeysAmount > 90 ? 120 : 25));
 }
 
 static void Include(StoreDbContext context)
@@ -155,51 +156,62 @@ static void Include(StoreDbContext context)
     var result = context.Games
         .Include(g => g.Category);
     Console.WriteLine(result.ToQueryString());
-    foreach (var x in result)
-        Console.WriteLine($"{x.Name} {x.Category?.Name}");
     Console.WriteLine();
+    foreach (var x in result)
+        Console.WriteLine($"{x.Name} - {x.Category?.Name}");
+
 
     var categories = context.Categories
-        .Include(g => g.Games);
-    foreach (var x in categories)
-        Console.WriteLine($"{x.Name} {x.Games?.Count()}");
-    Console.WriteLine(result.ToQueryString());
+        .Include(c => c.Games);
+    Console.WriteLine(categories.ToQueryString());
     Console.WriteLine();
+    foreach (var x in categories)
+        Console.WriteLine($"{x.Name} - {x.Games?.Count()}");
+}
+
+static void Pagination(StoreDbContext context)
+{
+    int pageSize = 3;
+    int currentPage = 4;
+
+    var games = context.Games
+        .Skip(pageSize * (currentPage - 1))
+        .Take(pageSize);
+
+    Console.WriteLine(games.ToQueryString());
+    Console.WriteLine();
+    foreach (var game in games)
+        Console.WriteLine(game.Name);
 }
 
 static void Filter(StoreDbContext context)
 {
-    var games = context.Games.AsQueryable();
+    var filteredGame = context.Games.AsQueryable();
 
-    Console.WriteLine("Фильтрация по цене?");
-    var answer = Console.ReadLine();
+    if (true)
+        filteredGame = filteredGame.Where(g => g.Price < 500);
+    if (true)
+        filteredGame = filteredGame.Where(g => g.Name.Contains("a"));
 
-    if (answer == "yes") // заменить условие
-        games = games.Where(g => g.Price < 500);
-    if (true) // заменить условие
-        games = games.Where(g => g.Name.Contains("a"));
-    if (true) // заменить условие
-        games = games.Where(g => !String.IsNullOrWhiteSpace(g.Description));
-    if (true) // заменить условие
-        games = games.Where(g => g.Category.Name == "arcada");
-    Console.WriteLine(games.ToQueryString());
+    Console.WriteLine(filteredGame.ToQueryString());
 }
 
-static void FilterBy(StoreDbContext context)
+static void FilterClass(StoreDbContext context)
 {
     GameFilter filter = new()
     {
         Price = 500,
-        Category = "аркада"
+        Category = "simulator",
     };
 
     var games = context.Games.AsQueryable();
-    if (filter.Price is not null) // заменить условие
+
+    if (filter.Price is not null)
         games = games.Where(g => g.Price < filter.Price);
-    if (filter.Name is not null) // заменить условие
-        games = games.Where(g => g.Name == filter.Name);
-    if (filter.Category is not null) // заменить условие
-        games = games.Where(g => g.Category.Name == filter.Category);
+    if (filter.Name is not null)
+        games = games.Where(g => g.Name.Contains(filter.Name));
+    if (true)
+        games = games.Where(g => g.Category.Name.Contains(filter.Category));
 }
 
 static void Sort(StoreDbContext context)
@@ -208,41 +220,53 @@ static void Sort(StoreDbContext context)
         .OrderByDescending(g => g.Price);
 
     games = context.Games
-        .OrderByDescending(g => EF.Property<object>(g, "Name"));
+        .OrderBy(g => EF.Property<object>(g, "Name"));
 
-    foreach (var g in games)
-        Console.WriteLine($"{g.Name} {g.Price}");
+    foreach (var game in games)
+        Console.WriteLine($"{game.Name}, {game.Price} руб.");
 }
 
-static void SelectDto(StoreDbContext context)
+static void Dtos(StoreDbContext context)
 {
     var titles = context.Games
         .Select(g => g.Name);
 
-    foreach (var t in titles)
-        Console.WriteLine(t);
-    Console.WriteLine();
+    foreach (var title in titles)
+        Console.WriteLine(title);
 
     var games = context.Games
         .Include(g => g.Category)
         .Select(g => g.ToDto());
 
-    //var testGames = context.Games.ToList();
-    //var dtos = testGames.ToDtos();
+    games = context.Games
+        .Select(GameExpression.ToDto);
 
-    foreach (var g in games)
-        Console.WriteLine($"{g.Title} {g.Price} {g.Tax} {g.Category}");
-    //return games;
-    Console.WriteLine(games.ToQueryString());
-
+    foreach (var game in games)
+        Console.WriteLine($"{game.Title}, {game.Price} - {game.Tax}, [{game.Category}]");
 }
 
-//var game = context.Games.Find(1);
-//game = await context.Games.FindAsync(1);
+static void GroupBy(StoreDbContext context)
+{
+    var categories1 = context.Games
+        .GroupBy(g => g.Category!.Name)
+        .Select(group => new
+        {
+            CategoryName = group.Key,
+            GamesCount = group.Count(),
+        });
 
-//game = context.Games.FirstOrDefault(g => g.GameId > 2);
-//game = await context.Games.FirstOrDefaultAsync(g => g.GameId > 2);
+    Console.WriteLine(categories1.ToQueryString());
 
-//game = context.Games.SingleOrDefault(g => g.GameId > 2);
-//game = await context.Games.SingleOrDefaultAsync(g => g.GameId > 2);
+    Console.WriteLine();
 
+    var categories2 = context.Games
+        .GroupBy(g => new { g.Category!.Name, g.IsDeleted })
+        .Select(group => new
+        {
+            CategoryName = group.Key.Name,
+            group.Key.IsDeleted,
+            GamesCount = group.Count(g => g.IsDeleted),
+        });
+
+    Console.WriteLine(categories2.ToQueryString());
+}

@@ -1,27 +1,14 @@
-﻿using Lection1007.Models;
+﻿using Lections1007.Contexts;
+using Lections1007.Model;
 using Microsoft.EntityFrameworkCore;
 
-namespace Lection1007.Services
+namespace Lections1007.Services
 {
-    public class AppDbContext : DbContext
+    public class CategoryService(StoreDbContext context)
     {
-        public DbSet<Category> Categories => Set<Category>();
-        public DbSet<Game> Games => Set<Game>();
+        private readonly StoreDbContext _context = context;
 
-        public AppDbContext()
-        {
-            //Database.EnsureDeleted();   // удаление БД
-            //Database.EnsureCreated();   // создание БД
-        }
-
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
-        {
-        }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            //optionsBuilder.UseSqlite("Data Source = text.db");
-            optionsBuilder.UseSqlServer("Data Source=mssql;Initial Catalog=ispp3102;Persist Security Info=True;User ID=ispp3102;Password=3102;Encrypt=True;Trust Server Certificate=True");
-        }
+        public async Task<List<Category>> GetCategoriesAsync()
+            => await _context.Categories.ToListAsync();
     }
 }
