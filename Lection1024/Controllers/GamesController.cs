@@ -6,8 +6,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Lection1024.Contexts;
+using Lection1024.Models;
 
-namespace Lection1024.Models
+namespace Lection1024.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -41,8 +42,84 @@ namespace Lection1024.Models
             return game;
         }
 
+        #region get-metods
+        [HttpGet("categories")]
+        public async Task<ActionResult<IEnumerable<Game>>> GetGamesByCategories(string categories)
+        {
+            var values = categories.Split(',', StringSplitOptions.TrimEntries);
+
+            return await _context.Games
+                .Include(g => g.Category)
+                .Where(g => values.Contains(g.Category.Name))
+                .ToListAsync();
+        }
+
+        [HttpGet("category")]
+        public async Task<ActionResult<IEnumerable<Game>>> GetGamesByCategory(string name)
+        {
+            var category = await _context.Categories
+                .Include(c => c.Games)
+                .FirstOrDefaultAsync(c => c.Name == name);
+
+            return category is null ? NotFound() : category.Games.ToList();
+  
+        }
+
+        [HttpGet("price")] // ?price=priceMin-priceMax
+        public async Task<ActionResult<IEnumerable<Game>>> GetGamesByPrice(string price)
+        {
+            var values = price.Split('-');
+            if (values.Length != 2)
+                return BadRequest();
+
+            int minPrice, maxPrice;
+            if (!int.TryParse(values[0], out minPrice) ||
+               !int.TryParse(values[1], out maxPrice))
+                return BadRequest();
+
+            return await _context.Games
+                .Where(g => g.Price >= minPrice && g.Price <= maxPrice)
+                .ToListAsync();
+        }
+
+        [HttpGet("filters")] // filters...
+        public async Task<ActionResult<IEnumerable<Game>>> GetGamesByFilters(string filters)
+        {
+            var values = filters.Split(',');
+            Dictionary<string, string> pairs = new();
+            foreach (var v in values)
+            {
+                var pair = v.Split(":");
+                pairs[pair[0]] = pair[1];
+            }
+
+            // ...
+
+            return await _context.Games
+                .ToListAsync();
+        }
+
+        //[HttpGet("columns")] // columns?col1,col2,...
+        //public async Task<ActionResult> GetColumns(string columns)
+        //{
+        //    return await _context.Database
+        //        .SqlQuery<object>()
+        //        .ToListAsync();
+        //}
+
+        [HttpGet("info")]
+        public async Task<ActionResult<IEnumerable<GameDto>>> GetGamesInfo()
+        {
+            return await _context.Games
+                .Select(g => g.ToDto())
+                .ToListAsync();
+        }
+
+
+
+        #endregion
+
         // PUT: api/Games/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
         public async Task<IActionResult> PutGame(int id, Game game)
         {
@@ -73,7 +150,6 @@ namespace Lection1024.Models
         }
 
         // POST: api/Games
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
         public async Task<ActionResult<Game>> PostGame(Game game)
         {
