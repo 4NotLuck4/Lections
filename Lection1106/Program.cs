@@ -1,42 +1,13 @@
-﻿using BCrypt.Net;
-using Lection1106;
+﻿using Lection1106;
 using System.Security.Cryptography;
 using System.Text;
 
 Console.WriteLine("passwords");
 
+AppDbContext context;
 
-var login = "admin";
-var password = "123";
-using var context = new AppDbContext();
-var user = context.Users.FirstOrDefault(u => u.Login == login);
+(bool flowControl, object value) = LocalUser(out context);
 
-if (user is null)
-{
-    Console.WriteLine("not found");
-    return;
-}
-
-if (user.LockedUntil.HasValue && user.LockedUntil >= DateTime.UtcNow)
-{
-    Console.WriteLine($"too early. wait {user.LockedUntil}");
-    return;
-}
-if (user.Password != password)
-{
-    user.FailedLoginAttempts++;
-    if (user.FailedLoginAttempts >= 3)
-        user.LockedUntil = DateTime.UtcNow.AddMinutes(1);
-
-    Console.WriteLine($"incorrect");
-    return;
-}
-user.LastAccess = DateTime.UtcNow;
-user.FailedLoginAttempts = 0;
-user.LockedUntil = null;
-context.SaveChanges();
-
-Console.WriteLine("welcome");
 
 static void ComputeHash()
 {
@@ -73,4 +44,73 @@ static async Task InsertData()
     var context = new AppDbContext();
     context.Users.AddRange(users);
     await context.SaveChangesAsync();
+}
+
+static bool IsUserLocked(User user)
+{
+    if (user.LockedUntil.HasValue && user.LockedUntil <= DateTime.UtcNow)
+    {
+        user.FailedLoginAttempts = 0;
+        user.LockedUntil = null;
+        return false;
+    }
+    return user.LockedUntil.HasValue;
+}
+
+static bool IsCorrectPassword(string password, User user)
+{
+    int attempts = 3;
+    int duration = 1;
+
+    if (user.Password != password)
+    {
+        user.FailedLoginAttempts++;
+        if (user.FailedLoginAttempts >= attempts)
+            user.LockedUntil = DateTime.UtcNow.AddSeconds(duration);
+        return false;
+    }
+    return true;
+}
+
+static void SuccessLogin(User user)
+{
+    user.FailedLoginAttempts = 0;
+    user.LastAccess = DateTime.UtcNow;
+}
+
+static (bool flowControl, object value) LocalUser(out AppDbContext context)
+{
+    var login = "admin";
+    var password = "123";
+    context = new AppDbContext();
+    var user = context.Users.FirstOrDefault(u => u.Login == login);
+
+    if (user is null)
+    {
+        Console.WriteLine("not found");
+        return false;
+    }
+
+    if (user.LockedUntil.HasValue && user.LockedUntil >= DateTime.UtcNow)
+    {
+        Console.WriteLine($"too early. wait {user.LockedUntil}");
+        return false;
+    }
+    if (IsUserLocked(user))
+    {
+        Console.WriteLine($"locked until {user.LockedUntil:HH:mm:ss}");
+        return false;
+    }
+
+    if (IsCorrectPassword(password, user))
+    {
+        Console.WriteLine("incorect  password");
+        context.SaveChanges();
+        return false;
+    }
+    SuccessLogin(user);
+    context.SaveChanges();
+
+    Console.WriteLine("welcome");
+    return;
 }
