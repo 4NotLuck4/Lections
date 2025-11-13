@@ -6,7 +6,7 @@ Console.WriteLine("passwords");
 
 AppDbContext context;
 
-(bool flowControl, object value) = LocalUser(out context);
+static void LocalUser();
 
 
 static void ComputeHash()
@@ -78,39 +78,39 @@ static void SuccessLogin(User user)
     user.LastAccess = DateTime.UtcNow;
 }
 
-static (bool flowControl, object value) LocalUser(out AppDbContext context)
+static void LocalUser()
 {
     var login = "admin";
     var password = "123";
-    context = new AppDbContext();
-    var user = context.Users.FirstOrDefault(u => u.Login == login);
+    //context = new AppDbContext();
+    //var user = context.Users.FirstOrDefault(u => u.Login == login);
 
-    if (user is null)
-    {
-        Console.WriteLine("not found");
-        return false;
-    }
+    //if (user is null)
+    //{
+    //    Console.WriteLine("not found");
+    //    return false;
+    //}
 
-    if (user.LockedUntil.HasValue && user.LockedUntil >= DateTime.UtcNow)
-    {
-        Console.WriteLine($"too early. wait {user.LockedUntil}");
-        return false;
-    }
-    if (IsUserLocked(user))
-    {
-        Console.WriteLine($"locked until {user.LockedUntil:HH:mm:ss}");
-        return false;
-    }
+    //if (user.LockedUntil.HasValue && user.LockedUntil >= DateTime.UtcNow)
+    //{
+    //    Console.WriteLine($"too early. wait {user.LockedUntil}");
+    //    return false;
+    //}
+    //if (IsUserLocked(user))
+    //{
+    //    Console.WriteLine($"locked until {user.LockedUntil:HH:mm:ss}");
+    //    return false;
+    //}
 
-    if (IsCorrectPassword(password, user))
-    {
-        Console.WriteLine("incorect  password");
-        context.SaveChanges();
-        return false;
-    }
-    SuccessLogin(user);
-    context.SaveChanges();
+    //if (IsCorrectPassword(password, user))
+    //{
+    //    Console.WriteLine("incorect  password");
+    //    context.SaveChanges();
+    //    return false;
+    //}
+    //SuccessLogin(user);
+    //context.SaveChanges();
 
-    Console.WriteLine("welcome");
-    return;
+    //Console.WriteLine("welcome");
+    //return;
 }
