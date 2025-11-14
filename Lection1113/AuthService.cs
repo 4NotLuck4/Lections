@@ -9,7 +9,7 @@ namespace Lection1113
     public class AuthService
     {
         private readonly string _secretKey = "12345678123456781234567812345678";
-        
+
         // опционально
         private readonly string _issuer = "myapp";          // издатель
         private readonly string _audience = "myapp-users";  // потребители
@@ -50,5 +50,32 @@ namespace Lection1113
             return Convert.ToBase64String(randomNumbers);
         }
 
+        public bool IsValidToken(string token)
+        {
+            try
+            {
+                var tokenParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey)),
+                    ValidateLifetime = true,
+
+                    ValidateIssuer = true,
+                    ValidIssuer = _issuer,
+                    ValidateAudience = true,
+                    ValidAudience = _audience,
+
+                };
+
+                var tokenHandler = new JwtSecurityTokenHandler();
+                tokenHandler.ValidateToken(token, tokenParameters, out SecurityToken validatedToken);
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }
