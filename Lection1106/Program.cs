@@ -6,7 +6,7 @@ Console.WriteLine("passwords");
 
 AppDbContext context;
 
-static void LocalUser();
+//static void LocalUser();
 
 
 static void ComputeHash()

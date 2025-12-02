@@ -2,7 +2,7 @@
 
 Console.WriteLine("jwt");
 
-// htpps://www.jwt.io/
+// https://www.jwt.io/
 
 AuthService service = new();
 var accessToken = service.GenerateToken(123, "user1");
