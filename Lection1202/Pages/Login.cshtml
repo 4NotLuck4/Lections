@@ -20,23 +20,18 @@
             </div>
             <div class="form-group">
                 <label asp-for="User.Password" class="control-label"></label>
-                <input asp-for="User.Password" class="form-control" />
+                <input asp-for="User.Password" class="form-control" type="password"/>
                 <span asp-validation-for="User.Password" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="User.Role" class="control-label"></label>
-                <input asp-for="User.Role" class="form-control" />
-                <span asp-validation-for="User.Role" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
+                <input type="submit" value="Enter" class="btn btn-primary" />
             </div>
         </form>
-        <from method="post" asp-page-handler="Guest">
+        <form method="post" asp-page-handler="Guest">
             <div class="form-group">
                 <input type="submit" value="Guest" class="btn btn-primary" />
             </div>
-        </from>
+        </form>
     </div>
 </div>
 

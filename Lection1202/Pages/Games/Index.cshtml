@@ -6,6 +6,13 @@
 }
 
 <h1>Index</h1>
+<form method="get">
+    <input type="text" name="GameName" placeholder="Название игры..."
+        class="from-control"
+        onchange="this.from.submit()"
+        value="@Model.GameName"
+        />
+</form>
 
 <p>
     <a asp-page="Create">Create New</a>

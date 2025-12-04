@@ -1,4 +1,7 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.AspNetCore.Http;
+@inject IHttpContextAccessor Accessor;
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -32,8 +35,15 @@
                     </ul>
                 </div>
 
-                <a class="btn btn-primary" asp-area="" asp-page="./Login">Login</a>
-                <a class="btn btn-primary" asp-area="" asp-page="./Login" asp-page-handler="Logout">Logout</a>
+                @if (Accessor.HttpContext.Session.GetString("Role") is null)
+                {
+                    <a class="btn btn-primary" asp-page="/Login">Login</a>
+                }
+                else
+                {
+                    @Accessor.HttpContext.Session.GetString("Role")
+                    <a class="btn btn-primary" asp-page="/Login" asp-page-handler="Logout">Logout</a>
+                }
             </div>
         </nav>
     </header>

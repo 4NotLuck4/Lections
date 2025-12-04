@@ -21,6 +21,9 @@ namespace Lection1202.Pages.Games
 
         public IList<Game> Game { get;set; } = default!;
 
+        [BindProperty(SupportsGet = true)]
+        public string GameName {  get; set; }
+
         public async Task OnGetAsync()
         {
             Game = await _context.Games
